@@ -2,12 +2,12 @@
 
 ## Install
 
-1.  Install `nlohmann/json`, `python-yaml`
+1.  Install `nlohmann/json`, `python-yaml`, `quicktype`
 
 For example: ArchLinux
 
 ```sh
-sudo pacman -S nlohmann-json python-yaml
+sudo pacman -S nlohmann-json python-yaml quicktype
 ```
 
 ## Usage
