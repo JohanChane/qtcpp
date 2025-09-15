@@ -1,0 +1,42 @@
+{
+  "orderId": "ORD-67890",
+  "customer": {
+    "customerId": "CUST-12345",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "shippingAddress": {
+      "street": "123 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "zipCode": "12345",
+      "country": "USA"
+    }
+  },
+  "items": [
+    {
+      "sku": "PROD-001",
+      "name": "Wireless Mouse",
+      "quantity": 1,
+      "unitPrice": 29.99,
+      "category": "electronics"
+    },
+    {
+      "sku": "PROD-042",
+      "name": "Desk Mat",
+      "quantity": 2,
+      "unitPrice": 15.50,
+      "category": "office-supplies"
+    }
+  ],
+  "pricing": {
+    "subtotal": 60.99,
+    "tax": 6.10,
+    "shippingCost": 5.00,
+    "discount": 0.00,
+    "total": 72.09
+  },
+  "paymentStatus": "paid",
+  "fulfillmentStatus": "shipped",
+  "createdAt": "2023-10-27T14:30:00.000Z",
+  "updatedAt": "2023-10-28T09:15:00.000Z"
+}

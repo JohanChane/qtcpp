@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+
+"""
+Convert JSON to C++ (.hpp) types using quicktype. Process:
+- Convert JSON to schema
+- Convert schema to hpp
+
+`schema:json` mappings format:
+
+```json
+# {<schema.json>: {namespace: <dir>, sources: [source_1, source_2]}}
+{
+    "Foo.schema": {'namespace': foo, 'sources': ["Foo.json"]},
+    "Bar.schema": {'namespace': bar, 'sources': ["Bar.1.json", "Bar.2.json"]}     # Multiple JSONs for one target
+}
+```
+
+`hpp:schema` mappings format:
+
+```json
+# {<.hpp>: {namespace: <dir>, sources: [source_1, source_2]}}
+{
+    "Foo.hpp": {'namespace': foo, 'sources': ["schema.json"]},      # Usually one schema per hpp
+}
+```
+"""
+
+import os, sys, subprocess
+from pathlib import Path
+import argparse
+import yaml
+
+def get_files_with_suffix(directory, suffix):
+    dst_files = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(suffix):
+                dst_files.append(os.path.join(root, file))
+    return dst_files
+
+def get_target_paths(path, suffix):
+    # Get directory and filename
+    directory = os.path.dirname(path)
+    base_name = os.path.basename(path)
+    
+    # Find first dot position, remove extension
+    first_dot_index = base_name.find('.')
+    if first_dot_index != -1:
+        base_name = base_name[:first_dot_index]
+    
+    # Construct new filename with extension
+    return os.path.join(directory, base_name + suffix)
+
+def generate_schema_mappings(proto_root, protos, does_build_all):
+    schema_types = {}
+    for the_json_path in get_files_with_suffix(proto_root, '.json'):
+        schema_path = get_target_paths(the_json_path, '.schema')
+        namespace = Path(schema_path).parent.name.lower()           # Use directory name as namespace
+
+        if does_build_all or any(Path(the_json_path).parent == Path(p) for p in protos):
+            if schema_path not in schema_types:
+                schema_types[schema_path] = {"namespace": namespace, "sources": []}
+            schema_types[schema_path]["sources"].append(the_json_path)
+
+    return schema_types
+
+def generate_cpp_mappings(proto_root, protos, does_build_all):
+    cpp_types = {}
+    for the_schema_path in get_files_with_suffix(proto_root, '.schema'):
+        hpp_path = get_target_paths(the_schema_path, '.hpp')
+        namespace = Path(the_schema_path).parent.name.lower()       # Use directory name as namespace
+
+        if does_build_all or any(Path(the_schema_path).parent == Path(p) for p in protos):
+            if hpp_path not in cpp_types:
+                cpp_types[hpp_path] = {"namespace": namespace, "sources": []}
+            cpp_types[hpp_path]["sources"].append(the_schema_path)
+    return cpp_types
+
+def convert_jsons_to_schemas(schema_types, schema_additional_args):
+    for target, data in schema_types.items():
+        sources = data["sources"]
+
+        # Build quicktype command
+        cmd = ['quicktype', '--lang', 'schema', '--out', target, '--src-lang', 'json']
+        cmd.extend(schema_additional_args)
+
+        # Add each source file to command
+        for source in sources:
+            cmd.extend(['--src', source])
+        
+        # Execute command
+        try:
+            # print(cmd)
+            subprocess.run(' '.join(cmd), check=True, shell=True)
+            print(f'Successfully converted {sources} to {target}')
+        except subprocess.CalledProcessError as e:
+            print(f'Error converting {sources} to {target}: {e}')
+
+def convert_schema_to_cpp(proto_types, cpp_additional_args):
+    for target, data in proto_types.items():
+        namespace = data["namespace"]
+        sources = data["sources"]
+
+        # Build quicktype command
+        cmd = ['quicktype', '--lang', 'c++', '--namespace', namespace, '--out', target, '--src-lang', 'schema']
+        cmd.extend(cpp_additional_args)
+        
+        # Add each source file to command
+        for source in sources:
+            cmd.extend(['--src', source])
+        
+        # Execute command
+        try:
+            # print(cmd)
+            subprocess.run(' '.join(cmd), check=True, shell=True)
+            print(f'Successfully converted {sources} to {target}')
+        except subprocess.CalledProcessError as e:
+            print(f'Error converting {sources} to {target}: {e}')
+
+def load_config(config_path):
+    """Load configuration file"""
+    if not os.path.exists(config_path):
+        print(f"Warning: Config file {config_path} not found, using defaults")
+        return {
+            'schema_conversion': {'additional_args': ['--all-properties-optional']},
+            'cpp_conversion': {'additional_args': ['--no-boost', '--code-format', 'with-struct']}
+        }
+    
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+        
+        schema_conversion = config.get('schema_conversion', {})
+        schema_args = schema_conversion.get('additional_args', ['--all-properties-optional'])
+        
+        cpp_conversion = config.get('cpp_conversion', {})
+        cpp_args = cpp_conversion.get('additional_args', ['--no-boost', '--code-format', 'with-struct'])
+        
+        # Return processed configuration
+        return {
+            'schema_conversion': {'additional_args': schema_args},
+            'cpp_conversion': {'additional_args': cpp_args}
+        }
+
+def main():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    # project_dir = Path(script_dir).parent
+    # proto_dir = os.path.join(project_dir, 'example', 'include', 'json_proto')              # Set json_proto path
+    default_config_path = os.path.join(script_dir, 'config.yaml')
+
+    # Create main parser
+    parser = argparse.ArgumentParser(description='build proto tool for anygame')
+
+    # Add subcommand parsers
+    subparsers = parser.add_subparsers(dest='action', help='action to perform')
+    
+    # build
+    build_parser = subparsers.add_parser('build', help='build proto')
+    build_parser.add_argument('--config', default=default_config_path, help='Path to config file (default: config.yaml, relative the path of qtcpp script)')
+    build_parser.add_argument('--proto_root', required=True, help='proto root')
+    build_parser.add_argument('--all', action='store_true', help='Build all protos')
+    build_parser.add_argument('--proto_dir_name', nargs='+', help='The dir name of the proto')
+    
+    # Parse arguments
+    args = parser.parse_args()
+
+    if args.action == 'build':
+        config = load_config(args.config)
+        proto_root = Path(args.proto_root).resolve()
+        
+        does_build_all = False
+        protos = []
+        if args.all:
+            does_build_all = True
+        else:
+            # Convert protos to absolute paths
+            proto_root_absolute_path = Path(proto_root).resolve()
+            for the_proto_dir_name in args.proto_dir_name:
+                protos.append(os.path.join(proto_root_absolute_path, the_proto_dir_name))
+        print('=== schema conversion ===')
+        schema_types = generate_schema_mappings(proto_root, protos, does_build_all)
+        schema_additional_args = config['schema_conversion']['additional_args']
+        convert_jsons_to_schemas(schema_types, schema_additional_args)
+        print(schema_types)
+        print('\n=== cpp conversion ===')
+        proto_types = generate_cpp_mappings(proto_root, protos, does_build_all)
+        cpp_additional_args = config['cpp_conversion']['additional_args']
+        convert_schema_to_cpp(proto_types, cpp_additional_args)
+        print(proto_types)
+        print()
+    else:
+        print('Error: Invalid action given.', file=sys.stderr)
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,19 @@
+{
+  "success": false,
+  "error": {
+    "code": 102,
+    "message": "Validation failed",
+    "details": [
+      {
+        "field": "email",
+        "issue": "is not a valid email address",
+        "message": ""
+      },
+      {
+        "field": "password",
+        "issue": "",
+        "message": "must be at least 8 characters long"
+      }
+    ]
+  }
+}

@@ -1,0 +1,133 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/OrderProto",
+    "definitions": {
+        "OrderProto": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "orderId": {
+                    "type": "string"
+                },
+                "customer": {
+                    "$ref": "#/definitions/Customer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Item"
+                    }
+                },
+                "pricing": {
+                    "$ref": "#/definitions/Pricing"
+                },
+                "paymentStatus": {
+                    "type": "string"
+                },
+                "fulfillmentStatus": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [],
+            "title": "OrderProto"
+        },
+        "Customer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "customerId": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "shippingAddress": {
+                    "$ref": "#/definitions/ShippingAddress"
+                }
+            },
+            "required": [],
+            "title": "Customer"
+        },
+        "ShippingAddress": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "street": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "zipCode": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "country": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "ShippingAddress"
+        },
+        "Item": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "sku": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "unitPrice": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Item"
+        },
+        "Pricing": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "subtotal": {
+                    "type": "number"
+                },
+                "tax": {
+                    "type": "number"
+                },
+                "shippingCost": {
+                    "type": "number"
+                },
+                "discount": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
+            },
+            "required": [],
+            "title": "Pricing"
+        }
+    }
+}

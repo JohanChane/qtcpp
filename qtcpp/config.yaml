@@ -1,0 +1,11 @@
+schema_conversion:
+  additional_args:
+    - "--all-properties-optional"
+    # Other schema conversion parameters can be added
+
+cpp_conversion:
+  additional_args:
+    - "--no-boost"
+    - "--code-format with-struct"
+    # - "--include-location global-include"
+    # Other C++ conversion parameters can be added

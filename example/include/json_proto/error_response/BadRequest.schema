@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/BadRequest",
+    "definitions": {
+        "BadRequest": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "sub_code": {
+                    "type": "string"
+                },
+                "sub_msg": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "BadRequest"
+        }
+    }
+}
